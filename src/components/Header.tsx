@@ -8,15 +8,15 @@ interface HeaderProps {
 }
 
 export default function Header({ onGameStyleChange, currentGameStyle }: HeaderProps) {
-  return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-black border-b border-white/10 z-50">
-      <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
-        <div className="flex items-center gap-12">
-          <Link href="/" className="text-2xl font-bold">
-            BLACK<span className="text-red-500">OR</span>RED
-          </Link>
-          
-          {onGameStyleChange && (
+    return (
+      <header className="fixed top-0 left-0 right-0 h-16 bg-black border-b border-white/10 z-50">
+        <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
+          <div className="flex items-center gap-12">
+            <Link href="/" className="text-2xl font-bold flex items-center">
+              <span className="text-white/20 text-2xl mr-2">♠</span>BLACK<span className="text-red-500">SOL</span>RED<span className="text-red-500/20 text-2xl ml-2">♥</span>
+            </Link>
+            
+            {onGameStyleChange && (
             <nav className="flex gap-6">
               <button
                 onClick={() => onGameStyleChange('cards')}
@@ -54,4 +54,4 @@ export default function Header({ onGameStyleChange, currentGameStyle }: HeaderPr
       </div>
     </header>
   );
-} 
+}
