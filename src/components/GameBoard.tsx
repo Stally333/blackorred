@@ -10,6 +10,28 @@ import LiveChat from './social/LiveChat';
 import WinnersTicker from './social/WinnersTicker';
 import BetConfirmationModal from './BetConfirmationModal';
 import Toast from './ui/Toast';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface GameBoardProps {
   gameStyle: 'cards' | 'roulette';
@@ -44,10 +66,15 @@ interface PlayerCardProps {
   setBetAmount: (amount: number) => void;
   betHistory: Array<{
     amount: number;
-    color: 'black' | 'red';
     result: 'win' | 'loss';
+    balance: number;
+    timestamp: number;
+    color: 'black' | 'red';
   }>;
   selectedDeck: 'single' | 'double' | 'triple';
+  className?: string;
+  setShowHistoryModal: (show: boolean) => void;
+  lastResults: ('black' | 'red')[];
 }
 
 export default function GameBoard({ gameStyle }: GameBoardProps) {
@@ -201,18 +228,22 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
   }
 
   const handleColorSelect = (color: 'black' | 'red') => {
-    // Player selection
+    // Player selection with their team
+    const playerTeam = color.toUpperCase() as 'BLACK' | 'RED';
     setPlayer(prev => ({ 
       ...prev, 
       selectedColor: color,
-      team: color.toUpperCase() as 'BLACK' | 'RED'
+      team: playerTeam
     }));
 
-    // House automatically picks opposite color
+    // House gets opposite color and opposite team
+    const oppositeColor = color === 'black' ? 'red' : 'black';
+    const oppositeTeam = oppositeColor.toUpperCase() as 'BLACK' | 'RED';
+    
     setHouse(prev => ({ 
       ...prev, 
-      selectedColor: color === 'black' ? 'red' : 'black',
-      team: color === 'black' ? 'RED' : 'BLACK'
+      selectedColor: oppositeColor,
+      team: oppositeTeam  // This ensures house gets opposite team
     }));
   };
 
@@ -286,7 +317,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
       setTimeout(() => {
         // Update results
         setLastResults(prev => [drawnCard.color, ...prev].slice(0, 10));
-        setShowGameStats(true);
+        setShowGameStats(false); // This will now just hide the animation for the new game
         
         // Set result data for modal
         setLastResult({
@@ -478,26 +509,65 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
             onClick={() => setShowHistoryModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-gradient-to-br from-zinc-900 to-black p-6 rounded-2xl border border-white/10 shadow-2xl max-w-4xl w-full mx-4"
-              onClick={e => e.stopPropagation()}
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-b from-zinc-900/95 to-black/95 p-6 rounded-2xl border border-white/10 shadow-2xl max-w-md w-full mx-4"
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white">Betting History</h2>
-                <button 
+                <button
                   onClick={() => setShowHistoryModal(false)}
                   className="text-white/60 hover:text-white"
                 >
                   ✕
                 </button>
               </div>
-              <BettingHistory history={bettingHistory} />
+
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                {bettingHistory.map((bet, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center justify-between p-3 rounded-lg ${
+                      bet.result === 'win'
+                        ? 'bg-emerald-500/10 border border-emerald-500/20'
+                        : 'bg-red-500/10 border border-red-500/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        bet.color === 'black' ? 'bg-black' : 'bg-red-600'
+                      }`}>
+                        {bet.color === 'black' ? '♠' : '♥'}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-white">
+                          {bet.amount} SOL
+                        </div>
+                        <div className="text-xs text-white/60">
+                          {new Date(bet.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`text-sm font-medium ${
+                      bet.result === 'win' ? 'text-emerald-400' : 'text-red-400'
+                    }`}>
+                      {bet.result === 'win' ? '+' : '-'}{bet.amount}
+                    </span>
+                  </div>
+                ))}
+
+                {bettingHistory.length === 0 && (
+                  <div className="text-center text-white/60 py-8">
+                    No bets placed yet
+                  </div>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -630,14 +700,14 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-12rem)] relative flex flex-col mt-8">
+    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-12rem)] relative flex flex-col mt-6">
       <FloatingSuits />
       <ResultModal />
       <HistoryModal />
-      <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-2 shadow-2xl border border-white/10 flex-1 relative">
+      <div className="bg-white/5 backdrop-blur-lg rounded-3xl px-8 py-6 shadow-2xl border border-white/10 flex-1 relative">
         {/* Joker Dealer */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-64 h-64 z-30 -top-8"
+          className="absolute left-1/2 -translate-x-1/2 w-64 h-64 z-30 -top-6"
           style={{ 
             filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.3))',
             transformOrigin: 'center bottom'
@@ -662,11 +732,12 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
           />
         </motion.div>
 
-        <div className="flex gap-2 items-stretch h-[calc(100%-3rem)]">
+        <div className="flex gap-2 items-stretch h-full">
           {/* Player Card */}
           <PlayerCard 
             player={player} 
             side="left" 
+            className="w-72"
             onColorSelect={handleColorSelect} 
             handleDraw={handleDraw} 
             isDrawing={isDrawing}
@@ -674,8 +745,10 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
             setIsConfirmationOpen={setIsConfirmationOpen}
             betAmount={betAmount}
             setBetAmount={setBetAmount}
-            betHistory={[]}
+            betHistory={bettingHistory}
             selectedDeck={selectedDeck}
+            setShowHistoryModal={setShowHistoryModal}
+            lastResults={lastResults}
           />
           
           {/* Center Game Area */}
@@ -684,8 +757,8 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
               <div className="relative w-full h-[calc(100%-3rem)] flex items-center justify-center">
                 {/* Card Display Container */}
                 <div className="relative flex flex-col items-center justify-center">
-                  {/* Card Display */}
-                  <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 shadow-xl transform scale-110 z-10 mt-16">
+                  {/* Card Display - Increased sizing */}
+                  <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-xl">
                     <div className="relative">
                       {currentCard ? (
                         <Card
@@ -697,8 +770,9 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                           deckCount={deckCount}
                         />
                       ) : (
-                        <div className="w-[250px] h-[350px] flex items-center justify-center relative overflow-hidden">
-                          {/* Animated background */}
+                        // Increased placeholder dimensions
+                        <div className="w-[280px] h-[380px] flex items-center justify-center relative overflow-hidden">
+                          {/* Animated background - increased size */}
                           <motion.div
                             className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"
                             animate={{
@@ -711,13 +785,13 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                             transition={{ duration: 2, repeat: Infinity }}
                           />
                           
-                          {/* Floating cards animation */}
+                          {/* Floating cards animation - increased size */}
                           <div className="absolute inset-0">
                             <motion.div
                               className="absolute"
                               animate={{
-                                y: [-20, 20, -20],
-                                x: [-10, 10, -10],
+                                y: [-15, 15, -15],
+                                x: [-8, 8, -8],
                                 rotate: [5, -5, 5],
                               }}
                               transition={{ duration: 4, repeat: Infinity }}
@@ -727,8 +801,8 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                             <motion.div
                               className="absolute right-0"
                               animate={{
-                                y: [20, -20, 20],
-                                x: [10, -10, 10],
+                                y: [15, -15, 15],
+                                x: [8, -8, 8],
                                 rotate: [-5, 5, -5],
                               }}
                               transition={{ duration: 4, repeat: Infinity }}
@@ -737,12 +811,12 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                             </motion.div>
                           </div>
 
-                          {/* Center text */}
+                          {/* Center text - increased size */}
                           <div className="text-center text-white/60">
                             <motion.p
                               animate={{ opacity: [0.4, 0.8, 0.4] }}
                               transition={{ duration: 2, repeat: Infinity }}
-                              className="text-lg font-medium"
+                              className="text-xl font-medium"
                             >
                               Select a color to begin
                             </motion.p>
@@ -771,30 +845,72 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                     ))}
                   </div>
 
-                  {/* Title, Stats and History */}
+                  {/* Title and Stats only - remove History button */}
                   <div className="mt-6 flex flex-col items-center gap-4">
-                    <div className="flex items-center gap-4">
-                      <h2 className="text-2xl font-bold text-white bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                    {/* Enhanced Player vs House Title */}
+                    <div className="flex flex-col items-center gap-3">
+                      <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent tracking-tight">
                         Player vs House
                       </h2>
-                      <GameStats lastResults={lastResults} showResults={showGameStats} />
-                    </div>
+                      
+                      {/* Results Display */}
+                      <div className="flex items-center gap-3">
+                        {/* Single container for results/no results */}
+                        <motion.div
+                          className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl backdrop-blur-sm"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          {lastResults.length > 0 ? (
+                            // Show the results
+                            <div className="flex gap-2">
+                              {lastResults.slice(0, 4).map((result, index) => (
+                                <motion.div
+                                  key={index}
+                                  className={`w-5 h-5 rounded-lg ${
+                                    result === 'black' 
+                                      ? 'bg-black ring-1 ring-white/20' 
+                                      : 'bg-red-600 ring-1 ring-white/20'
+                                  }`}
+                                  initial={{ scale: 0, rotate: -180 }}
+                                  animate={{ scale: 1, rotate: 0 }}
+                                  transition={{ 
+                                    delay: index * 0.1,
+                                    type: "spring",
+                                    stiffness: 200,
+                                    damping: 15
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            // Show "No results yet"
+                            <span className="text-white/60 font-medium">
+                              No results yet
+                            </span>
+                          )}
+                        </motion.div>
+                      </div>
 
-                    {/* Betting History Button - Smaller and inline */}
-                    <motion.button
-                      className="px-4 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg backdrop-blur-sm text-white/80 text-sm font-medium transition-all flex items-center gap-2"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowHistoryModal(true)}
-                    >
-                      <span>📊</span>
-                      Betting History
-                      {bettingHistory.length > 0 && (
-                        <span className={bettingHistory[0].result === 'win' ? 'text-green-500' : 'text-red-500'}>
-                          {bettingHistory[0].result === 'win' ? '+' : '-'}{bettingHistory[0].amount} SOL
-                        </span>
-                      )}
-                    </motion.button>
+                      {/* Results History Dots - can be removed or kept as additional visual */}
+                      <div className="flex gap-1.5 mt-1">
+                        {[...Array(5)].map((_, index) => (
+                          <motion.div
+                            key={index}
+                            className={`w-2 h-2 rounded-full ${
+                              lastResults[index] === 'black' 
+                                ? 'bg-black' 
+                                : lastResults[index] === 'red'
+                                ? 'bg-red-600'
+                                : 'bg-white/10'
+                            }`}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -803,12 +919,19 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
 
           {/* House Card */}
           <PlayerCard 
-            player={house} 
-            side="right" 
+            player={house}
+            side="right"
             onColorSelect={() => {}}
             isHouse={true}
             houseState={house}
-            betHistory={bettingHistory}
+            setPlayer={setHouse}
+            setIsConfirmationOpen={setIsConfirmationOpen}
+            betAmount={0}
+            setBetAmount={() => {}}
+            betHistory={[]}
+            selectedDeck={selectedDeck}
+            setShowHistoryModal={setShowHistoryModal}
+            lastResults={lastResults}
           />
         </div>
       </div>
@@ -906,7 +1029,10 @@ const PlayerCard = ({
   betAmount,
   setBetAmount,
   betHistory,
-  selectedDeck
+  selectedDeck,
+  className,
+  setShowHistoryModal,
+  lastResults
 }: PlayerCardProps) => {
   const HOUSE_TAUNTS = [
     "Better luck next time! 😈",
@@ -968,7 +1094,7 @@ const PlayerCard = ({
 
   return (
     <motion.div 
-      className="w-64"
+      className={`w-72 ${className}`}
       initial={{ opacity: 0, x: side === 'left' ? -20 : 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
@@ -1009,37 +1135,149 @@ const PlayerCard = ({
 
           {isHouse ? (
             // House Side Content
-            <div className="flex flex-col h-full">
-              {/* House Stats */}
-              <div className="grid grid-cols-2 gap-1 mt-2">
-                <StatCard label="Wins" value={player.wins} />
-                <StatCard label="Total Bets" value={player.totalBets} />
-                <StatCard label="House Edge" value={houseStats.houseEdge} />
-                <StatCard label="Active Games" value={houseStats.activeGames} />
+            <div className="flex flex-col h-full space-y-2">
+              {/* House Stats Grid */}
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="col-span-2 p-2 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-white/60 text-xs">Total Volume</span>
+                      <h4 className="text-lg font-bold text-white">1.2M SOL</h4>
+                    </div>
+                    <div className="h-6 w-6 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                      📈
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <span className="text-white/60 text-xs">House Edge</span>
+                  <h4 className="text-base font-bold text-white">2.5%</h4>
+                </div>
+                
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <span className="text-white/60 text-xs">Paid Out</span>
+                  <h4 className="text-base font-bold text-white">892K SOL</h4>
+                </div>
               </div>
 
-              {/* Bet History */}
-              <div className="mt-4">
-                <h4 className="text-sm text-white/60 mb-2">Recent Bets</h4>
-                <div className="space-y-2">
-                  {betHistory.map((bet, index) => (
+              {/* Mini Chart */}
+              <div className="h-16 bg-white/5 rounded-lg p-2">
+                <div className="text-xs text-white/60 mb-1">Win Rate Trend</div>
+                <Line
+                  data={{
+                    labels: ['', '', '', '', '', ''],
+                    datasets: [{
+                      data: [51, 52, 50, 53, 51, 52],
+                      borderColor: '#10B981',
+                      tension: 0.4,
+                      borderWidth: 2,
+                      pointRadius: 0,
+                      fill: true,
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    }]
+                  }}
+                  options={{
+                    plugins: { legend: { display: false } },
+                    scales: {
+                      x: { display: false },
+                      y: { display: false, min: 45, max: 55 }
+                    },
+                    maintainAspectRatio: false,
+                  }}
+                />
+              </div>
+
+              {/* Recent Activity */}
+              <div className="space-y-1">
+                <h4 className="text-white/60 text-xs">Recent Activity</h4>
+                <div className="space-y-1 max-h-[140px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+                  {lastResults.slice(0, 3).map((result, index) => (
                     <div
                       key={index}
-                      className={`flex items-center justify-between p-2 rounded-lg ${
-                        bet.result === 'win' ? 'bg-black/40' : 'bg-red-900/40'
-                      }`}
+                      className="flex items-center justify-between p-2.5 bg-white/5 rounded-lg"
                     >
                       <div className="flex items-center gap-2">
-                        <span>{bet.color === 'black' ? '⚫' : '🔴'}</span>
-                        <span className="text-white">{bet.amount} SOL</span>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          result === 'black' ? 'bg-black/40' : 'bg-red-600/40'
+                        }`}>
+                          {result === 'black' ? '♠️' : '♥️'}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-white">
+                            {result === 'black' ? 'Black' : 'Red'}
+                          </div>
+                          <div className="text-xs text-white/60">
+                            {new Date().toLocaleTimeString()}
+                          </div>
+                        </div>
                       </div>
-                      <span className={bet.result === 'win' ? 'text-emerald-400' : 'text-red-400'}>
-                        {bet.result === 'win' ? '+' : '-'}{bet.amount} SOL
+                      <span className={`text-sm font-medium ${
+                        result === player.selectedColor ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        {result === player.selectedColor ? 'Win' : 'Loss'}
                       </span>
                     </div>
                   ))}
+
+                  {lastResults.length === 0 && (
+                    <div className="text-center text-white/60 py-4">
+                      No games played yet
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Daily Stats */}
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 text-xs">Volume</span>
+                    <span className="text-xs text-emerald-400">↑12%</span>
+                  </div>
+                  <h4 className="text-base font-bold text-white">52.8K</h4>
+                </div>
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 text-xs">Win Rate</span>
+                    <span className="text-xs text-red-400">↓0.8%</span>
+                  </div>
+                  <h4 className="text-base font-bold text-white">51.2%</h4>
+                </div>
+              </div>
+
+              {/* Active Games */}
+              <div className="p-2 bg-white/5 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/60 text-xs">Active Games</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-emerald-400 text-xs">•Live</span>
+                    <span className="text-base font-bold text-white">8</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Team Display for House */}
+              {isHouse && player.team && (
+                <div className={`mt-auto px-3 py-2 rounded-xl text-center font-medium text-lg ${
+                  player.team === 'BLACK' 
+                    ? 'bg-red-600 text-white shadow-lg'  // If house has BLACK, show RED styling
+                    : 'bg-black text-white shadow-lg'    // If house has RED, show BLACK styling
+                }`}>
+                  TEAM {player.team === 'BLACK' ? 'RED' : 'BLACK'}
+                </div>
+              )}
+
+              {/* Team Display for Player */}
+              {!isHouse && player.team && (
+                <div className={`mt-auto px-3 py-2 rounded-xl text-center font-medium text-lg ${
+                  player.team === 'BLACK' 
+                    ? 'bg-black text-white shadow-lg'
+                    : 'bg-red-600 text-white shadow-lg'
+                }`}>
+                  TEAM {player.team}
+                </div>
+              )}
             </div>
           ) : (
             // Player Side Content
@@ -1100,23 +1338,60 @@ const PlayerCard = ({
                 </div>
 
                 {/* Quick Bet Amounts */}
-                <div className="grid grid-cols-4 gap-1">
-                  {[0.1, 0.5, 1, 2].map((amount) => (
-                    <button
-                      key={amount}
-                      onClick={() => handleBetChange(amount)}
-                      className={`px-2 py-1 rounded-lg text-sm ${
-                        betAmount === amount ? 'bg-emerald-600 text-white' : 'bg-black/40 text-white/80'
-                      }`}
-                    >
-                      {amount} SOL
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 gap-1.5">
+                  <button
+                    onClick={() => handleBetChange(0.1)}
+                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                  >
+                    0.1 SOL
+                  </button>
+                  <button
+                    onClick={() => handleBetChange(0.5)}
+                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                  >
+                    0.5 SOL
+                  </button>
+                  <button
+                    onClick={() => handleBetChange(1)}
+                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                  >
+                    1 SOL
+                  </button>
+                  <button
+                    onClick={() => handleBetChange(2)}
+                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                  >
+                    2 SOL
+                  </button>
                 </div>
 
-                {/* Place Bet Button */}
+                {/* Color Selection - Enhanced styling for more prominence */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => onColorSelect('black')}
+                    className={`px-4 py-4 rounded-lg font-medium text-lg transition-all transform hover:scale-105 ${
+                      player.team === 'BLACK' 
+                        ? 'bg-black text-white shadow-xl ring-2 ring-white/20' 
+                        : 'bg-black/80 text-white/90 hover:bg-black hover:shadow-lg hover:ring-2 hover:ring-white/10'
+                    }`}
+                  >
+                    Black
+                  </button>
+                  <button
+                    onClick={() => onColorSelect('red')}
+                    className={`px-4 py-4 rounded-lg font-medium text-lg transition-all transform hover:scale-105 ${
+                      player.team === 'RED' 
+                        ? 'bg-red-600 text-white shadow-xl ring-2 ring-white/20' 
+                        : 'bg-red-600/80 text-white/90 hover:bg-red-600 hover:shadow-lg hover:ring-2 hover:ring-white/10'
+                    }`}
+                  >
+                    Red
+                  </button>
+                </div>
+
+                {/* Place Bet Button - Enhanced styling */}
                 <button
-                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-medium"
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white font-medium text-lg transition-all shadow-xl ring-2 ring-emerald-500/50 hover:ring-emerald-500/80 transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:ring-0 disabled:shadow-none"
                   onClick={handlePlaceBet}
                   disabled={!betAmount || betAmount <= 0 || !player.selectedColor}
                 >
@@ -1124,78 +1399,44 @@ const PlayerCard = ({
                 </button>
               </div>
 
-              {/* Basic Stats */}
-              <div className="grid grid-cols-2 gap-1 mt-2">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-0.5 mt-1.5">
                 <StatCard label="Wins" value={player.wins} />
+                <StatCard label="Win Rate" value={`${player.winRate}%`} />
+                <StatCard label="Streak" value={player.streak} />
                 <StatCard label="Total Bets" value={player.totalBets} />
               </div>
 
-              {/* Color Selection */}
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <button
-                  onClick={() => onColorSelect('black')}
-                  className={`px-4 py-2 rounded-lg ${
-                    player.team === 'BLACK' ? 'bg-black text-white' : 'bg-black/40 text-white/60'
-                  }`}
+              {/* Betting History Button */}
+              {!isHouse && (
+                <motion.button
+                  className="mt-2 w-full px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg backdrop-blur-sm text-white/80 text-sm font-medium transition-all flex items-center justify-between"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowHistoryModal(true)}
                 >
-                  Black
-                </button>
-                <button
-                  onClick={() => onColorSelect('red')}
-                  className={`px-4 py-2 rounded-lg ${
-                    player.team === 'RED' ? 'bg-red-600 text-white' : 'bg-red-600/40 text-white/60'
-                  }`}
-                >
-                  Red
-                </button>
-              </div>
-            </div>
-          )}
+                  <div className="flex items-center gap-2">
+                    <span>📊</span>
+                    Betting History
+                  </div>
+                  {betHistory && betHistory.length > 0 && (
+                    <span className="text-emerald-400">
+                      +{betHistory[0].amount} SOL
+                    </span>
+                  )}
+                </motion.button>
+              )}
 
-          {/* Deck Selection (moved from center) */}
-          {!isHouse && handleDraw && (
-            <div className="mt-auto">
-              <div className="grid grid-cols-3 gap-1 mb-2">
-                {['Single', 'Double', 'Triple'].map((deck) => (
-                  <button
-                    key={deck}
-                    onClick={() => handleDeckSelect(deck.toLowerCase())}
-                    className={`py-2 rounded-lg text-sm transition-all ${
-                      selectedDeck === deck.toLowerCase()
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-black/40 text-white/60 hover:bg-black/60'
-                    }`}
-                  >
-                    {deck}
-                  </button>
-                ))}
-              </div>
-              <button
-                className="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-medium transition-all disabled:opacity-50"
-                onClick={handleDraw}
-                disabled={isDrawing || !player.selectedColor}
-              >
-                {isDrawing ? 'Drawing...' : 'Draw Cards'}
-              </button>
-            </div>
-          )}
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-0.5 mt-1.5">
-            <StatCard label="Wins" value={player.wins} />
-            <StatCard label="Win Rate" value={`${player.winRate}%`} />
-            <StatCard label="Streak" value={player.streak} />
-            <StatCard label="Total Bets" value={player.totalBets} />
-          </div>
-
-          {/* Team Display (if selected) */}
-          {player.team && (
-            <div className={`mt-3 px-2 py-1.5 rounded-lg text-center text-sm font-medium ${
-              player.team === 'BLACK' 
-                ? 'bg-gradient-to-r from-zinc-900 to-black text-white'
-                : 'bg-gradient-to-r from-red-600 to-red-800 text-white'
-            }`}>
-              TEAM {player.team}
+              {/* Team Display */}
+              {!isHouse && player.team && (
+                <div className={`mt-auto px-3 py-2 rounded-xl text-center font-medium text-lg ${
+                  player.team === 'BLACK' 
+                    ? 'bg-black text-white shadow-lg'
+                    : 'bg-red-600 text-white shadow-lg'
+                }`}>
+                  TEAM {player.team}
+                </div>
+              )}
             </div>
           )}
         </div>

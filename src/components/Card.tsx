@@ -15,7 +15,12 @@ export default function Card({ color, isRevealed, isDrawing, suit, value, deckCo
   const deckStack = Array.from({ length: Math.min(deckCount, 3) }, (_, i) => i);
   
   return (
-    <div className="relative w-64 h-96">
+    <motion.div 
+      className="relative w-[280px] h-[380px] rounded-xl overflow-hidden"
+      initial={{ rotateY: 0 }}
+      exit={{ rotateY: 90 }}
+      transition={{ duration: 0.3, ease: "easeIn" }}
+    >
       {/* Deck stack effect */}
       {deckStack.map((i) => (
         <div
@@ -75,18 +80,18 @@ export default function Card({ color, isRevealed, isDrawing, suit, value, deckCo
             className="absolute inset-0 bg-white rounded-xl border border-white/20 shadow-xl"
             style={{ backfaceVisibility: 'hidden' }}
           >
-            <div className={`absolute inset-0 p-6 ${
+            <div className={`absolute inset-0 p-8 ${
               color === 'black' ? 'text-black' : 'text-red-600'
             }`}>
               {/* Top left */}
               <motion.div 
-                className="text-3xl font-bold"
+                className="text-4xl font-bold"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
                 {value}
-                <div className="text-4xl">{suit}</div>
+                <div className="text-5xl">{suit}</div>
               </motion.div>
               
               {/* Center */}
@@ -96,23 +101,23 @@ export default function Card({ color, isRevealed, isDrawing, suit, value, deckCo
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                <span className="text-9xl font-serif">{suit}</span>
+                <span className="text-[11rem] font-serif">{suit}</span>
               </motion.div>
               
               {/* Bottom right (inverted) */}
               <motion.div 
-                className="absolute bottom-6 right-6 text-3xl font-bold rotate-180"
+                className="absolute bottom-8 right-8 text-4xl font-bold rotate-180"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
                 {value}
-                <div className="text-4xl">{suit}</div>
+                <div className="text-5xl">{suit}</div>
               </motion.div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 } 
