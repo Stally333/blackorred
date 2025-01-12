@@ -33,7 +33,7 @@ export default function AvatarSelector({ isOpen, onClose, onSelect, currentAvata
                   currentAvatar === avatar ? 'ring-2 ring-white' : ''
                 }`}
               >
-                <Avatar src={avatar} size={40} />
+                <Avatar type={'player'}  size={40} />
               </motion.button>
             ))}
           </div>
