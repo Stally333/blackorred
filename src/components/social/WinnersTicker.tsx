@@ -37,7 +37,7 @@ export default function WinnersTicker() {
     // Update winners every 20 seconds
     const interval = setInterval(updateWinners, 20000);
     return () => clearInterval(interval);
-  }, []);
+  }, [updateWinners]);
 
   // Calculate total width for smooth scrolling
   const containerWidth = winners.length * 200; // Approximate width per winner item

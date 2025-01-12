@@ -1,11 +1,9 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { truncateAddress } from '@/utils/format';
 import Avatar from './Avatar';
-import GameStats from './GameStats';
 import Card from './Card';
-import BettingHistory from './BettingHistory';
 import LiveChat from './social/LiveChat';
 import WinnersTicker from './social/WinnersTicker';
 import BetConfirmationModal from './BetConfirmationModal';
@@ -71,7 +69,7 @@ interface PlayerCardProps {
     timestamp: number;
     color: 'black' | 'red';
   }>;
-  selectedDeck: 'single' | 'double' | 'triple';
+  selectedDeck: string;
   className?: string;
   setShowHistoryModal: (show: boolean) => void;
   lastResults: ('black' | 'red')[];
@@ -213,9 +211,10 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
     setRemainingRed(26 * deckCount);
   }, [deckCount]);
 
-  const handleDeckSelect = (deck: 'single' | 'double' | 'triple') => {
+  const handleDeckSelect = (deck: string) => {
     setSelectedDeck(deck);
     const deckMap = { single: 1, double: 2, triple: 3 };
+    //@ts-ignore
     setDeckCount(deckMap[deck]);
   };
 
@@ -363,13 +362,14 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
   };
 
   const setRandomTaunt = () => {
+
     const HOUSE_TAUNTS = [
-      "Better luck next time! 😈",
-      "House always wins! 🎰",
-      "Thanks for the SOL! 💰",
-      "Want to try again? 😏",
-      "Easy money! 🤑",
-      "Another one bites the dust! 💫",
+      'Better luck next time! 😈',
+      'House always wins! 🎰',
+      'Thanks for the SOL! 💰',
+      'Want to try again? 😏',
+      'Easy money! 🤑',
+      'Another one bites the dust! 💫',
     ];
     setCurrentTaunt(HOUSE_TAUNTS[Math.floor(Math.random() * HOUSE_TAUNTS.length)]);
   };
@@ -381,6 +381,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
     setTimeout(() => {
       setIsSpinning(false);
       const result = Math.random() > 0.5 ? 'black' : 'red';
+      //@ts-ignore
       setLastResults(prev => [result, ...prev].slice(0, 10));
     }, 3000);
   };
@@ -393,14 +394,14 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+            className='fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center'
             onClick={() => setShowResultModal(false)}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-gradient-to-b from-zinc-900/95 to-black/95 p-8 rounded-3xl border border-white/10 shadow-2xl max-w-md w-full mx-4"
+              className='bg-gradient-to-b from-zinc-900/95 to-black/95 p-8 rounded-3xl border border-white/10 shadow-2xl max-w-md w-full mx-4'
               onClick={e => e.stopPropagation()}
             >
               {/* Result Header */}
@@ -414,16 +415,16 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                 }`}
               >
                 <motion.h2
-                  className="text-4xl font-bold mb-2"
+                  className='text-4xl font-bold mb-2'
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 0.5 }}
                 >
                   {lastResult?.winner === 'player' ? (
-                    <span className="bg-gradient-to-r from-emerald-500 to-emerald-300 bg-clip-text text-transparent">
+                    <span className='bg-gradient-to-r from-emerald-500 to-emerald-300 bg-clip-text text-transparent'>
                       You Won! 🎉
                     </span>
                   ) : (
-                    <span className="bg-gradient-to-r from-red-500 to-red-300 bg-clip-text text-transparent">
+                    <span className='bg-gradient-to-r from-red-500 to-red-300 bg-clip-text text-transparent'>
                       House Wins
                     </span>
                   )}
@@ -431,14 +432,14 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
               </motion.div>
 
               {/* Bet Details */}
-              <div className="space-y-4 mb-6">
-                <div className="bg-white/5 rounded-2xl p-4">
-                  <p className="text-white/60 text-sm mb-1">Bet Amount:</p>
-                  <p className="text-2xl font-bold text-white">{lastResult?.amount} SOL</p>
+              <div className='space-y-4 mb-6'>
+                <div className='bg-white/5 rounded-2xl p-4'>
+                  <p className='text-white/60 text-sm mb-1'>Bet Amount:</p>
+                  <p className='text-2xl font-bold text-white'>{lastResult?.amount} SOL</p>
                 </div>
 
                 <motion.div
-                  className="bg-white/5 rounded-2xl p-4"
+                  className='bg-white/5 rounded-2xl p-4'
                   animate={{ 
                     boxShadow: lastResult?.winner === 'player' 
                       ? ['0 0 0 rgba(16, 185, 129, 0)', '0 0 30px rgba(16, 185, 129, 0.3)', '0 0 0 rgba(16, 185, 129, 0)']
@@ -446,22 +447,22 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <p className="text-white/60 text-sm mb-1">Payout:</p>
+                  <p className='text-white/60 text-sm mb-1'>Payout:</p>
                   <p className={`text-2xl font-bold ${
                     lastResult?.winner === 'player' ? 'text-emerald-500' : 'text-red-500'
                   }`}>
                     {lastResult?.winner === 'player' ? '+' : '-'}{lastResult?.amount} SOL
                   </p>
-                  <p className="text-white/40 text-xs mt-1">
+                  <p className='text-white/40 text-xs mt-1'>
                     (Initial: {lastResult?.amount} SOL + Win: {lastResult?.winner === 'player' ? lastResult?.amount : 0} SOL)
                   </p>
                 </motion.div>
 
-                <div className="bg-white/5 rounded-2xl p-4">
-                  <p className="text-white/60 text-sm mb-1">Winning Color:</p>
-                  <div className="flex items-center gap-2">
+                <div className='bg-white/5 rounded-2xl p-4'>
+                  <p className='text-white/60 text-sm mb-1'>Winning Color:</p>
+                  <div className='flex items-center gap-2'>
                     {lastResult?.color === 'black' ? '⚫' : '🔴'}
-                    <span className="text-xl font-bold text-white capitalize">
+                    <span className='text-xl font-bold text-white capitalize'>
                       {lastResult?.color}
                     </span>
                   </div>
@@ -469,20 +470,20 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
               </div>
 
               {/* Taunt Message */}
-              <div className="text-center mb-6">
+              <div className='text-center mb-6'>
                 <motion.p
-                  className="text-white/80 italic"
+                  className='text-white/80 italic'
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  "Want to try again? 😏"
+                  Want to try again? 😏
                 </motion.p>
               </div>
 
               {/* New Balance */}
-              <div className="bg-gradient-to-r from-white/10 to-white/5 rounded-2xl p-4 mb-6">
-                <p className="text-white/60 text-sm mb-1">New Balance:</p>
-                <p className="text-2xl font-bold text-white">{player.balance} SOL</p>
+              <div className='bg-gradient-to-r from-white/10 to-white/5 rounded-2xl p-4 mb-6'>
+                <p className='text-white/60 text-sm mb-1'>New Balance:</p>
+                <p className='text-2xl font-bold text-white'>{player.balance} SOL</p>
               </div>
 
               {/* Play Again Button */}
@@ -490,7 +491,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowResultModal(false)}
-                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl text-white font-bold shadow-lg transition-all"
+                className='w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl text-white font-bold shadow-lg transition-all'
               >
                 Play Again
               </motion.button>
@@ -509,7 +510,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+            className='fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center'
             onClick={() => setShowHistoryModal(false)}
           >
             <motion.div
@@ -517,19 +518,19 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-gradient-to-b from-zinc-900/95 to-black/95 p-6 rounded-2xl border border-white/10 shadow-2xl max-w-md w-full mx-4"
+              className='bg-gradient-to-b from-zinc-900/95 to-black/95 p-6 rounded-2xl border border-white/10 shadow-2xl max-w-md w-full mx-4'
             >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Betting History</h2>
+              <div className='flex items-center justify-between mb-4'>
+                <h2 className='text-xl font-bold text-white'>Betting History</h2>
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="text-white/60 hover:text-white"
+                  className='text-white/60 hover:text-white'
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+              <div className='space-y-2 max-h-[60vh] overflow-y-auto pr-2'>
                 {bettingHistory.map((bet, index) => (
                   <div
                     key={index}
@@ -539,17 +540,17 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                         : 'bg-red-500/10 border border-red-500/20'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className='flex items-center gap-3'>
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         bet.color === 'black' ? 'bg-black' : 'bg-red-600'
                       }`}>
                         {bet.color === 'black' ? '♠' : '♥'}
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-white">
+                        <div className='text-sm font-medium text-white'>
                           {bet.amount} SOL
                         </div>
-                        <div className="text-xs text-white/60">
+                        <div className='text-xs text-white/60'>
                           {new Date(bet.timestamp).toLocaleTimeString()}
                         </div>
                       </div>
@@ -563,7 +564,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                 ))}
 
                 {bettingHistory.length === 0 && (
-                  <div className="text-center text-white/60 py-8">
+                  <div className='text-center text-white/60 py-8'>
                     No bets placed yet
                   </div>
                 )}
@@ -578,59 +579,59 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
   // Add this floating suits background component
   const FloatingSuits = () => {
     return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className='absolute inset-0 overflow-hidden pointer-events-none'>
         {/* Top left spade */}
         <motion.div
-          className="absolute -top-20 -left-20 text-white/30 text-[300px] transform -rotate-12 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+          className='absolute -top-20 -left-20 text-white/30 text-[300px] transform -rotate-12 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'
           animate={{
             y: [-20, 20, -20],
             x: [-10, 10, -10],
             rotate: [-12, -8, -12],
             opacity: [0.3, 0.4, 0.3],
           }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         >
           ♠
         </motion.div>
 
         {/* Bottom right heart */}
         <motion.div
-          className="absolute -bottom-20 -right-20 text-red-500/30 text-[300px] transform rotate-12 drop-shadow-[0_0_15px_rgba(255,0,0,0.2)]"
+          className='absolute -bottom-20 -right-20 text-red-500/30 text-[300px] transform rotate-12 drop-shadow-[0_0_15px_rgba(255,0,0,0.2)]'
           animate={{
             y: [20, -20, 20],
             x: [10, -10, 10],
             rotate: [12, 8, 12],
             opacity: [0.3, 0.4, 0.3],
           }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         >
           ♥
         </motion.div>
 
         {/* Top right club */}
         <motion.div
-          className="absolute -top-20 -right-20 text-white/30 text-[300px] transform rotate-45 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+          className='absolute -top-20 -right-20 text-white/30 text-[300px] transform rotate-45 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'
           animate={{
             y: [-15, 15, -15],
             x: [10, -10, 10],
             rotate: [45, 40, 45],
             opacity: [0.3, 0.4, 0.3],
           }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
         >
           ♣
         </motion.div>
 
         {/* Bottom left diamond */}
         <motion.div
-          className="absolute -bottom-20 -left-20 text-red-500/30 text-[300px] transform -rotate-45 drop-shadow-[0_0_15px_rgba(255,0,0,0.2)]"
+          className='absolute -bottom-20 -left-20 text-red-500/30 text-[300px] transform -rotate-45 drop-shadow-[0_0_15px_rgba(255,0,0,0.2)]'
           animate={{
             y: [15, -15, 15],
             x: [-10, 10, -10],
             rotate: [-45, -40, -45],
             opacity: [0.3, 0.4, 0.3],
           }}
-          transition={{ duration: 8.5, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 8.5, repeat: Infinity, ease: 'easeInOut' }}
         >
           ♦
         </motion.div>
@@ -700,14 +701,14 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-12rem)] relative flex flex-col mt-6">
+    <div className='w-full max-w-7xl mx-auto h-[calc(100vh-12rem)] relative flex flex-col mt-6'>
       <FloatingSuits />
       <ResultModal />
       <HistoryModal />
-      <div className="bg-white/5 backdrop-blur-lg rounded-3xl px-8 py-6 shadow-2xl border border-white/10 flex-1 relative">
+      <div className='bg-white/5 backdrop-blur-lg rounded-3xl px-8 py-6 shadow-2xl border border-white/10 flex-1 relative'>
         {/* Joker Dealer */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-64 h-64 z-30 -top-6"
+          className='absolute left-1/2 -translate-x-1/2 w-64 h-64 z-30 -top-6'
           style={{ 
             filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.3))',
             transformOrigin: 'center bottom'
@@ -719,25 +720,25 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
           transition={{ 
             duration: 5,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: 'easeInOut'
           }}
         >
           <motion.img
-            src="/dealer-joker.png"
-            alt="Dealer"
-            className="w-full h-full object-contain"
+            src='/dealer-joker.png'
+            alt='Dealer'
+            className='w-full h-full object-contain'
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             whileHover={{ scale: 1.05, rotate: -5 }}
           />
         </motion.div>
 
-        <div className="flex gap-2 items-stretch h-full">
+        <div className='flex gap-2 items-stretch h-full'>
           {/* Player Card */}
           <PlayerCard 
             player={player} 
-            side="left" 
-            className="w-72"
+            side='left' 
+            className='w-72'
             onColorSelect={handleColorSelect} 
             handleDraw={handleDraw} 
             isDrawing={isDrawing}
@@ -752,14 +753,14 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
           />
           
           {/* Center Game Area */}
-          <div className="flex-1 flex flex-col items-center justify-center">
+          <div className='flex-1 flex flex-col items-center justify-center'>
             {gameStyle === 'cards' ? (
-              <div className="relative w-full h-[calc(100%-3rem)] flex items-center justify-center">
+              <div className='relative w-full h-[calc(100%-3rem)] flex items-center justify-center'>
                 {/* Card Display Container */}
-                <div className="relative flex flex-col items-center justify-center">
+                <div className='relative flex flex-col items-center justify-center'>
                   {/* Card Display - Increased sizing */}
-                  <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-xl">
-                    <div className="relative">
+                  <div className='bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-xl'>
+                    <div className='relative'>
                       {currentCard ? (
                         <Card
                           color={currentCard}
@@ -771,10 +772,10 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                         />
                       ) : (
                         // Increased placeholder dimensions
-                        <div className="w-[280px] h-[380px] flex items-center justify-center relative overflow-hidden">
+                        <div className='w-[280px] h-[380px] flex items-center justify-center relative overflow-hidden'>
                           {/* Animated background - increased size */}
                           <motion.div
-                            className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"
+                            className='absolute inset-0 bg-gradient-to-br from-white/5 to-transparent'
                             animate={{
                               background: [
                                 'linear-gradient(to bottom right, rgba(255,255,255,0.05), transparent)',
@@ -786,9 +787,9 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                           />
                           
                           {/* Floating cards animation - increased size */}
-                          <div className="absolute inset-0">
+                          <div className='absolute inset-0'>
                             <motion.div
-                              className="absolute"
+                              className='absolute'
                               animate={{
                                 y: [-15, 15, -15],
                                 x: [-8, 8, -8],
@@ -796,10 +797,10 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                               }}
                               transition={{ duration: 4, repeat: Infinity }}
                             >
-                              <span className="text-6xl opacity-20">♠️</span>
+                              <span className='text-6xl opacity-20'>♠️</span>
                             </motion.div>
                             <motion.div
-                              className="absolute right-0"
+                              className='absolute right-0'
                               animate={{
                                 y: [15, -15, 15],
                                 x: [8, -8, 8],
@@ -807,16 +808,16 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                               }}
                               transition={{ duration: 4, repeat: Infinity }}
                             >
-                              <span className="text-6xl opacity-20">♥️</span>
+                              <span className='text-6xl opacity-20'>♥️</span>
                             </motion.div>
                           </div>
 
                           {/* Center text - increased size */}
-                          <div className="text-center text-white/60">
+                          <div className='text-center text-white/60'>
                             <motion.p
                               animate={{ opacity: [0.4, 0.8, 0.4] }}
                               transition={{ duration: 2, repeat: Infinity }}
-                              className="text-xl font-medium"
+                              className='text-xl font-medium'
                             >
                               Select a color to begin
                             </motion.p>
@@ -827,7 +828,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                   </div>
 
                   {/* Deck Controls */}
-                  <div className="mt-8 flex gap-2 w-[250px] mx-auto">
+                  <div className='mt-8 flex gap-2 w-[250px] mx-auto'>
                     {['Single', 'Double', 'Triple'].map((deck) => (
                       <motion.button
                         key={deck}
@@ -846,24 +847,24 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                   </div>
 
                   {/* Title and Stats only - remove History button */}
-                  <div className="mt-6 flex flex-col items-center gap-4">
+                  <div className='mt-6 flex flex-col items-center gap-4'>
                     {/* Enhanced Player vs House Title */}
-                    <div className="flex flex-col items-center gap-3">
-                      <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent tracking-tight">
+                    <div className='flex flex-col items-center gap-3'>
+                      <h2 className='text-3xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent tracking-tight'>
                         Player vs House
                       </h2>
                       
                       {/* Results Display */}
-                      <div className="flex items-center gap-3">
+                      <div className='flex items-center gap-3'>
                         {/* Single container for results/no results */}
                         <motion.div
-                          className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl backdrop-blur-sm"
+                          className='flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl backdrop-blur-sm'
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                         >
                           {lastResults.length > 0 ? (
                             // Show the results
-                            <div className="flex gap-2">
+                            <div className='flex gap-2'>
                               {lastResults.slice(0, 4).map((result, index) => (
                                 <motion.div
                                   key={index}
@@ -876,7 +877,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                                   animate={{ scale: 1, rotate: 0 }}
                                   transition={{ 
                                     delay: index * 0.1,
-                                    type: "spring",
+                                    type: 'spring',
                                     stiffness: 200,
                                     damping: 15
                                   }}
@@ -884,8 +885,8 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                               ))}
                             </div>
                           ) : (
-                            // Show "No results yet"
-                            <span className="text-white/60 font-medium">
+                            // Show 'No results yet'
+                            <span className='text-white/60 font-medium'>
                               No results yet
                             </span>
                           )}
@@ -893,7 +894,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
                       </div>
 
                       {/* Results History Dots - can be removed or kept as additional visual */}
-                      <div className="flex gap-1.5 mt-1">
+                      <div className='flex gap-1.5 mt-1'>
                         {[...Array(5)].map((_, index) => (
                           <motion.div
                             key={index}
@@ -920,7 +921,7 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
           {/* House Card */}
           <PlayerCard 
             player={house}
-            side="right"
+            side='right'
             onColorSelect={() => {}}
             isHouse={true}
             houseState={house}
@@ -964,13 +965,13 @@ export default function GameBoard({ gameStyle }: GameBoardProps) {
 // Enhanced StatCard Component with better visuals
 const StatCard = ({ label, value }: { label: string, value: string | number }) => (
   <motion.div 
-    className="bg-gradient-to-br from-white/10 to-white/5 rounded-lg p-1.5 backdrop-blur-sm hover:from-white/15 hover:to-white/10 transition-all cursor-pointer group"
+    className='bg-gradient-to-br from-white/10 to-white/5 rounded-lg p-1.5 backdrop-blur-sm hover:from-white/15 hover:to-white/10 transition-all cursor-pointer group'
     whileHover={{ scale: 1.02 }}
   >
-    <div className="flex items-center justify-between">
-      <p className="text-white/60 text-xs font-medium">{label}</p>
+    <div className='flex items-center justify-between'>
+      <p className='text-white/60 text-xs font-medium'>{label}</p>
       <motion.p 
-        className="text-sm font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent"
+        className='text-sm font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent'
         animate={{ scale: [1, 1.05, 1] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
@@ -982,9 +983,9 @@ const StatCard = ({ label, value }: { label: string, value: string | number }) =
 
 // Add BetHistory component
 const BetHistory = ({ history }: { history: Array<{ amount: number, color: 'black' | 'red', result?: 'win' | 'loss' }> }) => (
-  <div className="py-2">
-    <h4 className="text-white/60 text-xs font-medium mb-2">Bet History</h4>
-    <div className="space-y-1 max-h-[120px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+  <div className='py-2'>
+    <h4 className='text-white/60 text-xs font-medium mb-2'>Bet History</h4>
+    <div className='space-y-1 max-h-[120px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10'>
       {history.map((bet, index) => (
         <motion.div
           key={index}
@@ -998,9 +999,9 @@ const BetHistory = ({ history }: { history: Array<{ amount: number, color: 'blac
               : 'bg-white/5 border border-white/10'
           }`}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-sm">{bet.color === 'black' ? '⚫' : '🔴'}</span>
-            <span className="text-xs font-medium text-white">{bet.amount} SOL</span>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm'>{bet.color === 'black' ? '⚫' : '🔴'}</span>
+            <span className='text-xs font-medium text-white'>{bet.amount} SOL</span>
           </div>
           {bet.result && (
             <span className={`text-xs font-medium ${
@@ -1034,18 +1035,18 @@ const PlayerCard = ({
   setShowHistoryModal,
   lastResults
 }: PlayerCardProps) => {
-  const HOUSE_TAUNTS = [
-    "Better luck next time! 😈",
-    "House always wins! 🎰",
-    "Thanks for the SOL! 💰",
-    "Want to try again? 😏",
-    "Easy money! 🤑",
-    "Another one bites the dust! 💫",
-    "Your SOL is my SOL now! ✨",
-    "Don't give up yet! 🎲",
-    "Fortune favors the house! 🏦",
-    "Keep them coming! 🌟"
-  ];
+  const HOUSE_TAUNTS = useMemo(() =>[
+    'Better luck next time! 😈',
+    'House always wins! 🎰',
+    'Thanks for the SOL! 💰',
+    'Want to try again? 😏',
+    'Easy money! 🤑',
+    'Another one bites the dust! 💫',
+    'Your SOL is my SOL now! ✨',
+    'Don&apos;t give up yet! 🎲',
+    'Fortune favors the house! 🏦',
+    'Keep them coming! 🌟'
+  ], []);;
 
   const [dailyVolume] = useState((Math.random() * 10000).toFixed(2));
   const [currentTaunt, setCurrentTaunt] = useState(HOUSE_TAUNTS[0]);
@@ -1053,7 +1054,7 @@ const PlayerCard = ({
   useEffect(() => {
     // Update taunt after component mounts
     setCurrentTaunt(HOUSE_TAUNTS[Math.floor(Math.random() * HOUSE_TAUNTS.length)]);
-  }, []);
+  }, [HOUSE_TAUNTS]);
 
   const handleBetChange = (value: number) => {
     // Round to 3 decimal places
@@ -1061,6 +1062,7 @@ const PlayerCard = ({
     const validValue = Math.max(0, Math.min(roundedValue, player.balance));
     if (!isNaN(validValue)) {
       setBetAmount(validValue);
+      //@ts-ignore
       setPlayer(prev => ({ 
         ...prev, 
         currentBet: validValue 
@@ -1071,7 +1073,7 @@ const PlayerCard = ({
   // Add handlePlaceBet inside PlayerCard component
   const handlePlaceBet = () => {
     if (!betAmount || betAmount <= 0) return;
-    
+    //@ts-ignore
     setPlayer(prev => ({
       ...prev,
       currentBet: betAmount,
@@ -1099,24 +1101,24 @@ const PlayerCard = ({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="h-full bg-gradient-to-b from-white/10 to-transparent rounded-2xl p-1.5 backdrop-blur-sm border border-white/10">
-        <div className="flex flex-col h-full">
+      <div className='h-full bg-gradient-to-b from-white/10 to-transparent rounded-2xl p-1.5 backdrop-blur-sm border border-white/10'>
+        <div className='flex flex-col h-full'>
           {/* Player Header */}
-          <div className="flex items-center gap-3 pb-2 border-b border-white/10">
+          <div className='flex items-center gap-3 pb-2 border-b border-white/10'>
             <motion.div 
-              className="relative group"
+              className='relative group'
               whileHover={{ scale: 1.05 }}
             >
               <Avatar 
                 type={isHouse ? 'house' : 'player'}
                 color={player.avatarColor}
                 size={42}
-                className="group-hover:opacity-90"
+                className='group-hover:opacity-90'
               />
             </motion.div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white truncate bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+            <div className='flex-1 min-w-0'>
+              <div className='flex items-center gap-2'>
+                <h3 className='text-lg font-bold text-white truncate bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent'>
                   {player.name}
                 </h3>
                 {player.walletAddress && (
@@ -1131,39 +1133,39 @@ const PlayerCard = ({
           </div>
 
           {/* Add margin after header if it's the house card */}
-          {isHouse && <div className="h-2" />}
+          {isHouse && <div className='h-2' />}
 
           {isHouse ? (
             // House Side Content
-            <div className="flex flex-col h-full space-y-2">
+            <div className='flex flex-col h-full space-y-2'>
               {/* House Stats Grid */}
-              <div className="grid grid-cols-2 gap-1.5">
-                <div className="col-span-2 p-2 bg-white/5 rounded-lg">
-                  <div className="flex items-center justify-between">
+              <div className='grid grid-cols-2 gap-1.5'>
+                <div className='col-span-2 p-2 bg-white/5 rounded-lg'>
+                  <div className='flex items-center justify-between'>
                     <div>
-                      <span className="text-white/60 text-xs">Total Volume</span>
-                      <h4 className="text-lg font-bold text-white">1.2M SOL</h4>
+                      <span className='text-white/60 text-xs'>Total Volume</span>
+                      <h4 className='text-lg font-bold text-white'>1.2M SOL</h4>
                     </div>
-                    <div className="h-6 w-6 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                    <div className='h-6 w-6 bg-emerald-500/20 rounded-lg flex items-center justify-center'>
                       📈
                     </div>
                   </div>
                 </div>
                 
-                <div className="p-2 bg-white/5 rounded-lg">
-                  <span className="text-white/60 text-xs">House Edge</span>
-                  <h4 className="text-base font-bold text-white">2.5%</h4>
+                <div className='p-2 bg-white/5 rounded-lg'>
+                  <span className='text-white/60 text-xs'>House Edge</span>
+                  <h4 className='text-base font-bold text-white'>2.5%</h4>
                 </div>
                 
-                <div className="p-2 bg-white/5 rounded-lg">
-                  <span className="text-white/60 text-xs">Paid Out</span>
-                  <h4 className="text-base font-bold text-white">892K SOL</h4>
+                <div className='p-2 bg-white/5 rounded-lg'>
+                  <span className='text-white/60 text-xs'>Paid Out</span>
+                  <h4 className='text-base font-bold text-white'>892K SOL</h4>
                 </div>
               </div>
 
               {/* Mini Chart */}
-              <div className="h-16 bg-white/5 rounded-lg p-2">
-                <div className="text-xs text-white/60 mb-1">Win Rate Trend</div>
+              <div className='h-16 bg-white/5 rounded-lg p-2'>
+                <div className='text-xs text-white/60 mb-1'>Win Rate Trend</div>
                 <Line
                   data={{
                     labels: ['', '', '', '', '', ''],
@@ -1189,25 +1191,25 @@ const PlayerCard = ({
               </div>
 
               {/* Recent Activity */}
-              <div className="space-y-1">
-                <h4 className="text-white/60 text-xs">Recent Activity</h4>
-                <div className="space-y-1 max-h-[140px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+              <div className='space-y-1'>
+                <h4 className='text-white/60 text-xs'>Recent Activity</h4>
+                <div className='space-y-1 max-h-[140px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10'>
                   {lastResults.slice(0, 3).map((result, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2.5 bg-white/5 rounded-lg"
+                      className='flex items-center justify-between p-2.5 bg-white/5 rounded-lg'
                     >
-                      <div className="flex items-center gap-2">
+                      <div className='flex items-center gap-2'>
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                           result === 'black' ? 'bg-black/40' : 'bg-red-600/40'
                         }`}>
                           {result === 'black' ? '♠️' : '♥️'}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-white">
+                          <div className='text-sm font-medium text-white'>
                             {result === 'black' ? 'Black' : 'Red'}
                           </div>
-                          <div className="text-xs text-white/60">
+                          <div className='text-xs text-white/60'>
                             {new Date().toLocaleTimeString()}
                           </div>
                         </div>
@@ -1221,7 +1223,7 @@ const PlayerCard = ({
                   ))}
 
                   {lastResults.length === 0 && (
-                    <div className="text-center text-white/60 py-4">
+                    <div className='text-center text-white/60 py-4'>
                       No games played yet
                     </div>
                   )}
@@ -1229,30 +1231,30 @@ const PlayerCard = ({
               </div>
 
               {/* Daily Stats */}
-              <div className="grid grid-cols-2 gap-1.5">
-                <div className="p-2 bg-white/5 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60 text-xs">Volume</span>
-                    <span className="text-xs text-emerald-400">↑12%</span>
+              <div className='grid grid-cols-2 gap-1.5'>
+                <div className='p-2 bg-white/5 rounded-lg'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-white/60 text-xs'>Volume</span>
+                    <span className='text-xs text-emerald-400'>↑12%</span>
                   </div>
-                  <h4 className="text-base font-bold text-white">52.8K</h4>
+                  <h4 className='text-base font-bold text-white'>52.8K</h4>
                 </div>
-                <div className="p-2 bg-white/5 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60 text-xs">Win Rate</span>
-                    <span className="text-xs text-red-400">↓0.8%</span>
+                <div className='p-2 bg-white/5 rounded-lg'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-white/60 text-xs'>Win Rate</span>
+                    <span className='text-xs text-red-400'>↓0.8%</span>
                   </div>
-                  <h4 className="text-base font-bold text-white">51.2%</h4>
+                  <h4 className='text-base font-bold text-white'>51.2%</h4>
                 </div>
               </div>
 
               {/* Active Games */}
-              <div className="p-2 bg-white/5 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60 text-xs">Active Games</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-emerald-400 text-xs">•Live</span>
-                    <span className="text-base font-bold text-white">8</span>
+              <div className='p-2 bg-white/5 rounded-lg'>
+                <div className='flex items-center justify-between'>
+                  <span className='text-white/60 text-xs'>Active Games</span>
+                  <div className='flex items-center gap-1'>
+                    <span className='text-emerald-400 text-xs'>•Live</span>
+                    <span className='text-base font-bold text-white'>8</span>
                   </div>
                 </div>
               </div>
@@ -1281,54 +1283,54 @@ const PlayerCard = ({
             </div>
           ) : (
             // Player Side Content
-            <div className="flex flex-col h-full">
+            <div className='flex flex-col h-full'>
               {/* Betting Controls */}
-              <div className="space-y-2">
+              <div className='space-y-2'>
                 {/* Balance Display */}
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60 text-xs">Balance:</span>
-                  <span className="text-white text-sm font-medium">{player.balance} SOL</span>
+                <div className='flex items-center justify-between'>
+                  <span className='text-white/60 text-xs'>Balance:</span>
+                  <span className='text-white text-sm font-medium'>{player.balance} SOL</span>
                 </div>
 
                 {/* Amount Controls with Settings */}
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   {/* Settings Button */}
                   <button
-                    className="p-2 bg-black/40 hover:bg-black/60 rounded-lg transition-all"
+                    className='p-2 bg-black/40 hover:bg-black/60 rounded-lg transition-all'
                     onClick={() => setIsConfirmationOpen(true)}
                   >
                     <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className="h-5 w-5 text-white/80" 
-                      viewBox="0 0 20 20" 
-                      fill="currentColor"
+                      xmlns='http://www.w3.org/2000/svg' 
+                      className='h-5 w-5 text-white/80' 
+                      viewBox='0 0 20 20' 
+                      fill='currentColor'
                     >
                       <path 
-                        fillRule="evenodd" 
-                        d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" 
-                        clipRule="evenodd" 
+                        fillRule='evenodd' 
+                        d='M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z' 
+                        clipRule='evenodd' 
                       />
                     </svg>
                   </button>
 
                   {/* Amount Input */}
-                  <div className="flex-1 flex gap-2">
+                  <div className='flex-1 flex gap-2'>
                     <input
-                      type="number"
+                      type='number'
                       value={betAmount}
                       onChange={(e) => handleBetChange(Number(e.target.value))}
-                      className="w-full bg-black/20 rounded-lg px-3 py-2 text-white text-center text-lg"
-                      step="0.1"
+                      className='w-full bg-black/20 rounded-lg px-3 py-2 text-white text-center text-lg'
+                      step='0.1'
                     />
-                    <div className="flex flex-col gap-1">
+                    <div className='flex flex-col gap-1'>
                       <button 
-                        className="h-6 bg-black/40 hover:bg-black/60 rounded-md text-white text-sm font-bold"
+                        className='h-6 bg-black/40 hover:bg-black/60 rounded-md text-white text-sm font-bold'
                         onClick={() => handleBetChange(Math.min(player.balance, betAmount + 0.1))}
                       >
                         +
                       </button>
                       <button 
-                        className="h-6 bg-black/40 hover:bg-black/60 rounded-md text-white text-sm font-bold"
+                        className='h-6 bg-black/40 hover:bg-black/60 rounded-md text-white text-sm font-bold'
                         onClick={() => handleBetChange(Math.max(0, betAmount - 0.1))}
                       >
                         −
@@ -1338,35 +1340,35 @@ const PlayerCard = ({
                 </div>
 
                 {/* Quick Bet Amounts */}
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className='grid grid-cols-4 gap-1.5'>
                   <button
                     onClick={() => handleBetChange(0.1)}
-                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                    className='px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all'
                   >
                     0.1 SOL
                   </button>
                   <button
                     onClick={() => handleBetChange(0.5)}
-                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                    className='px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all'
                   >
                     0.5 SOL
                   </button>
                   <button
                     onClick={() => handleBetChange(1)}
-                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                    className='px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all'
                   >
                     1 SOL
                   </button>
                   <button
                     onClick={() => handleBetChange(2)}
-                    className="px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all"
+                    className='px-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/90 text-sm font-medium transition-all'
                   >
                     2 SOL
                   </button>
                 </div>
 
                 {/* Color Selection - Enhanced styling for more prominence */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className='grid grid-cols-2 gap-2'>
                   <button
                     onClick={() => onColorSelect('black')}
                     className={`px-4 py-4 rounded-lg font-medium text-lg transition-all transform hover:scale-105 ${
@@ -1391,7 +1393,7 @@ const PlayerCard = ({
 
                 {/* Place Bet Button - Enhanced styling */}
                 <button
-                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white font-medium text-lg transition-all shadow-xl ring-2 ring-emerald-500/50 hover:ring-emerald-500/80 transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:ring-0 disabled:shadow-none"
+                  className='w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white font-medium text-lg transition-all shadow-xl ring-2 ring-emerald-500/50 hover:ring-emerald-500/80 transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:ring-0 disabled:shadow-none'
                   onClick={handlePlaceBet}
                   disabled={!betAmount || betAmount <= 0 || !player.selectedColor}
                 >
@@ -1400,27 +1402,27 @@ const PlayerCard = ({
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-0.5 mt-1.5">
-                <StatCard label="Wins" value={player.wins} />
-                <StatCard label="Win Rate" value={`${player.winRate}%`} />
-                <StatCard label="Streak" value={player.streak} />
-                <StatCard label="Total Bets" value={player.totalBets} />
+              <div className='grid grid-cols-2 gap-0.5 mt-1.5'>
+                <StatCard label='Wins' value={player.wins} />
+                <StatCard label='Win Rate' value={`${player.winRate}%`} />
+                <StatCard label='Streak' value={player.streak} />
+                <StatCard label='Total Bets' value={player.totalBets} />
               </div>
 
               {/* Betting History Button */}
               {!isHouse && (
                 <motion.button
-                  className="mt-2 w-full px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg backdrop-blur-sm text-white/80 text-sm font-medium transition-all flex items-center justify-between"
+                  className='mt-2 w-full px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg backdrop-blur-sm text-white/80 text-sm font-medium transition-all flex items-center justify-between'
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowHistoryModal(true)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className='flex items-center gap-2'>
                     <span>📊</span>
                     Betting History
                   </div>
                   {betHistory && betHistory.length > 0 && (
-                    <span className="text-emerald-400">
+                    <span className='text-emerald-400'>
                       +{betHistory[0].amount} SOL
                     </span>
                   )}
